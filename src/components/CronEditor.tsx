@@ -38,9 +38,8 @@ export default function CronEditor() {
     u.searchParams.set('expr', expr);
     u.searchParams.set('tz', tz);
     u.searchParams.set('dialect', dialect);
-    // lang/theme 已由 App 写入；这里仅保证存在时不丢
     if (!u.searchParams.get('lang')) u.searchParams.set('lang', i18n.language === 'en' ? 'en' : 'zh-CN');
-    if (!u.searchParams.get('theme')) u.searchParams.set('theme', 'dark');
+    if (!u.searchParams.get('theme')) u.searchParams.set('theme', 'light');
     return u.toString();
   }, [expr, tz, dialect]);
 
@@ -52,7 +51,6 @@ export default function CronEditor() {
 
     const warnDomDowOr = shouldWarnDomDowOr(clean);
 
-    // cronstrue locale：zh_CN / en（best-effort）
     const locale = i18n.language === 'zh-CN' ? 'zh_CN' : 'en';
     let human = '';
     try {
@@ -79,17 +77,18 @@ export default function CronEditor() {
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      setTimeout(() => setCopied(false), 900);
+      setTimeout(() => setCopied(false), 1500);
     } catch {
       // ignore
     }
   }
 
   return (
-    <div className="card">
-      <div className="row">
-        <div style={{ flex: '1 1 520px' }}>
-          <div className="label">{t('cronExpression')}</div>
+    <div>
+      {/* Main Input Section */}
+      <div className="card">
+        <div style={{ marginBottom: 16 }}>
+          <label className="label">{t('cronExpression')}</label>
           <input
             className="input mono"
             value={expr}
@@ -99,97 +98,104 @@ export default function CronEditor() {
               syncUrl(v, tz, dialect);
             }}
             placeholder="*/5 * * * *"
+            style={{ fontSize: 16 }}
           />
-          <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <span className="badge mono">{t('fields')}: {parts.length}</span>
-            <span className="badge">{t('fieldHint')}</span>
-            {data.warnDomDowOr ? <span className="badge" title={t('domDowWarn')}>DOM/DOW OR</span> : null}
+        </div>
+
+        <div className="row">
+          <div style={{ flex: '1 1 200px' }}>
+            <label className="label">{t('timezone')}</label>
+            <input
+              className="input"
+              value={tz}
+              onChange={(e) => {
+                const v = e.target.value;
+                setTz(v);
+                syncUrl(expr, v, dialect);
+              }}
+              placeholder="Asia/Singapore"
+            />
+          </div>
+
+          <div style={{ width: 140 }}>
+            <label className="label">{t('dialect')}</label>
+            <select
+              className="input"
+              value={dialect}
+              onChange={(e) => {
+                const v = e.target.value as CronDialect;
+                setDialect(v);
+                syncUrl(expr, tz, v);
+              }}
+            >
+              <option value="crontab5">5 fields</option>
+              <option value="crontab6">6 fields</option>
+            </select>
+          </div>
+
+          <div style={{ width: 100 }}>
+            <label className="label">{t('next')}</label>
+            <input
+              className="input"
+              type="number"
+              value={count}
+              onChange={(e) => setCount(Number(e.target.value))}
+              min={1}
+              max={50}
+            />
           </div>
         </div>
 
-        <div style={{ width: 220 }}>
-          <div className="label">{t('timezone')}</div>
-          <input
-            className="input"
-            value={tz}
-            onChange={(e) => {
-              const v = e.target.value;
-              setTz(v);
-              syncUrl(expr, v, dialect);
-            }}
-            placeholder="Asia/Singapore"
-          />
-        </div>
-
-        <div style={{ width: 120 }}>
-          <div className="label">{t('next')}</div>
-          <input
-            className="input"
-            type="number"
-            value={count}
-            onChange={(e) => setCount(Number(e.target.value))}
-            min={1}
-            max={50}
-          />
-        </div>
-
-        <div style={{ width: 170 }}>
-          <div className="label">{t('dialect')}</div>
-          <select
-            className="input"
-            value={dialect}
-            onChange={(e) => {
-              const v = e.target.value as CronDialect;
-              setDialect(v);
-              syncUrl(expr, tz, v);
-            }}
-          >
-            <option value="crontab5">crontab (5 fields)</option>
-            <option value="crontab6">crontab (6 fields)</option>
-          </select>
-          <small>* 6 fields is validated; runtime semantics may differ.</small>
+        <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span className="badge mono">{parts.length} {t('fields')}</span>
+          <span className="badge">{t('fieldHint')}</span>
+          {data.warnDomDowOr && (
+            <span className="badge" style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>
+              DOM/DOW OR
+            </span>
+          )}
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+            <button className="btn primary" onClick={copyShare}>
+              {copied ? '✓ ' + t('copied') : t('copy') + ' ' + t('shareUrl')}
+            </button>
+          </div>
         </div>
       </div>
 
-      <hr />
-
-      <div className="row" style={{ alignItems: 'center' }}>
-        <div style={{ flex: '1 1 520px' }}>
-          <div className="label">{t('normalized')}</div>
-          <div className="mono">{data.clean}</div>
+      {/* Description Section */}
+      {data.human && (
+        <div className="card">
+          <div className="label">{t('description')}</div>
+          <div className="description-text">{data.human}</div>
+          {data.warnDomDowOr && (
+            <div style={{ marginTop: 12, fontSize: 13, color: 'var(--muted)' }}>
+              ℹ️ {t('domDowWarn')}
+            </div>
+          )}
         </div>
+      )}
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <span className="kbd">{t('shareUrl')}</span>
-          <button className="btn" onClick={copyShare}>
-            {copied ? t('copied') : t('copy')}
-          </button>
-        </div>
-      </div>
-
-      <div style={{ marginTop: 12 }}>
-        <div className="label">{t('description')}</div>
-        <div>{data.human ? data.human : <span style={{ opacity: 0.6 }}>—</span>}</div>
-        {data.warnDomDowOr ? <div className="footer">{t('domDowWarn')}</div> : null}
-      </div>
-
-      {'error' in data ? (
-        <div className="card error" style={{ marginTop: 12 }}>
+      {/* Error Section */}
+      {'error' in data && (
+        <div className="card error">
           <div className="label">{t('validationError')}</div>
-          <div>{data.error}</div>
+          <div style={{ color: 'var(--danger)', fontWeight: 500 }}>{data.error}</div>
         </div>
-      ) : null}
+      )}
 
-      {'nextRuns' in data ? (
-        <div style={{ marginTop: 12 }}>
+      {/* Next Runs Section */}
+      {'nextRuns' in data && data.nextRuns.length > 0 && (
+        <div className="card">
           <div className="label">{t('nextRuns')} ({tz})</div>
-          <ol>
+          <ol style={{ margin: '12px 0 0 20px' }}>
             {data.nextRuns.map((d, i) => (
-              <li key={i}>{d.toLocaleString(undefined, { timeZone: tz })}</li>
+              <li key={i} style={{ padding: '4px 0' }}>
+                {d.toLocaleString(undefined, { timeZone: tz })}
+              </li>
             ))}
           </ol>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

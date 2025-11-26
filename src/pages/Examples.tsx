@@ -30,25 +30,39 @@ export default function Examples() {
         <span className="badge">{t('examples')}</span>
       </div>
 
-      <h1 style={{ fontSize: 28, margin: '10px 0 6px' }}>{t('examples')}</h1>
-      <p style={{ marginTop: 0, color: 'var(--muted)' }}>
-        {i18n.language === 'zh-CN' ? '点击示例即可带入主页编辑器。' : 'Click an example to load it into the main editor.'}
+      <h1>{t('examples')}</h1>
+      <p>
+        {i18n.language === 'zh-CN' 
+          ? '点击示例即可带入主页编辑器。' 
+          : 'Click an example to load it into the main editor.'}
       </p>
 
       <div className="card">
         <ul style={{ listStyle: 'none', paddingLeft: 0, margin: 0 }}>
-          {examples.map((e) => (
-            <li key={e.expr} style={{ padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-              <button className="btn" style={{ width: '100%', justifyContent: 'space-between' }} onClick={() => load(e.expr)}>
+          {examples.map((e, idx) => (
+            <li 
+              key={e.expr} 
+              style={{ 
+                padding: '12px 0', 
+                borderBottom: idx === examples.length - 1 ? 'none' : '1px solid var(--border)' 
+              }}
+            >
+              <button 
+                className="btn" 
+                style={{ width: '100%', justifyContent: 'space-between', textAlign: 'left' }} 
+                onClick={() => load(e.expr)}
+              >
                 <span>{i18n.language === 'zh-CN' ? e.labelZh : e.labelEn}</span>
-                <span className="mono" style={{ color: 'var(--muted)' }}>{e.expr}</span>
+                <span className="mono" style={{ color: 'var(--accent)' }}>{e.expr}</span>
               </button>
             </li>
           ))}
         </ul>
       </div>
 
-      <div className="footer">{t('domDowWarn')}</div>
+      <div className="footer">
+        ℹ️ {t('domDowWarn')}
+      </div>
     </main>
   );
 }

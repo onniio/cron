@@ -11,7 +11,7 @@ export function getQueryTheme(): Theme | null {
 
 export function getTheme(): Theme {
   const v = localStorage.getItem(THEME_KEY);
-  return v === 'light' ? 'light' : 'dark';
+  return v === 'light' ? 'light' : v === 'dark' ? 'dark' : 'light';
 }
 
 export function setTheme(t: Theme) {

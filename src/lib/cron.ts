@@ -7,10 +7,6 @@ export function normalizeExpr(expr: string): string {
   return expr.trim().replace(/\s+/g, ' ');
 }
 
-/**
- * cronstrue locale：常见是 'en' / 'zh_CN'
- * 不同版本/构建下 locale 支持可能有差异，这里做 best-effort fallback。
- */
 export function toHuman(expr: string, locale?: string): string {
   try {
     if (locale) return (cronstrue as any).toString(expr, { locale });
@@ -32,11 +28,9 @@ export function getNextRuns(expr: string, tz: string, count: number, dialect: Cr
   const interval = CronExpressionParser.parse(clean, { tz, strict: true });
   const safeCount = Math.max(1, Math.min(count, 50));
 
-  // ✅ cron-parser v5 uses toDate()
   return interval.take(safeCount).map((d: any) => d.toDate());
 }
 
-/** 经典 crontab: DOM 与 DOW 同时限制时是 OR 语义（提示用户） */
 export function shouldWarnDomDowOr(expr: string): boolean {
   const fields = normalizeExpr(expr).split(' ').filter(Boolean);
   if (fields.length < 5) return false;

@@ -20,7 +20,6 @@ function getQueryParam(key: string): string {
 export default function App() {
   const { t } = useTranslation();
 
-  // URL 优先（用于分享复现），并同步到 localStorage
   React.useEffect(() => {
     const lang = getQueryParam('lang');
     if (lang === 'zh-CN' || lang === 'en') {
@@ -60,21 +59,23 @@ export default function App() {
 
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 10 }}>
                 <button className="btn" onClick={toggleLang}>
-                  {t('language')}: {i18n.language === 'zh-CN' ? t('zh') : t('en')}
+                  {i18n.language === 'zh-CN' ? '🇨🇳 中文' : '🇬🇧 English'}
                 </button>
                 <button className="btn" onClick={toggleTheme}>
-                  {t('theme')}: {getTheme() === 'dark' ? t('dark') : t('light')}
+                  {getTheme() === 'dark' ? '🌙 ' + t('dark') : '☀️ ' + t('light')}
                 </button>
               </div>
             </div>
 
-            <h1 style={{ fontSize: 30, margin: '10px 0 6px' }}>{t('title')}</h1>
-            <p style={{ marginTop: 0, color: 'var(--muted)' }}>{t('subtitle')}</p>
+            <h1>{t('title')}</h1>
+            <p>{t('subtitle')}</p>
 
             <CronEditor />
 
             <div className="footer">
-              Tip: 分享链接会携带 expr/tz/dialect/lang/theme，保证他人打开后视图一致。
+              💡 {i18n.language === 'zh-CN' 
+                ? '分享链接会携带 expr/tz/dialect/lang/theme，保证他人打开后视图一致。' 
+                : 'Shareable URLs include expr/tz/dialect/lang/theme parameters for consistent viewing.'}
             </div>
           </main>
         }

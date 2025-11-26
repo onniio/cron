@@ -14,7 +14,7 @@ function getQueryLang(): 'zh-CN' | 'en' | null {
 const resources = {
   'zh-CN': {
     translation: {
-      appName: 'Cron Guru Clone',
+      appName: 'Cron Guru',
       title: 'Cron 表达式解释器',
       subtitle: '校验 Cron 规则，输出自然语言说明，并预览未来触发时间。',
       examples: '示例',
@@ -32,7 +32,7 @@ const resources = {
       copied: '已复制',
       validationError: '校验错误',
       emptyExpression: '表达式不能为空。',
-      domDowWarn: '注意：在经典 crontab 中，“每月几号”和“星期几”是 OR 关系（满足其一即可触发）。',
+      domDowWarn: '注意：在经典 crontab 中，"每月几号"和"星期几"是 OR 关系（满足其一即可触发）。',
 
       language: '语言',
       theme: '主题',
@@ -47,7 +47,7 @@ const resources = {
   },
   en: {
     translation: {
-      appName: 'Cron Guru Clone',
+      appName: 'Cron Guru',
       title: 'Cron expression interpreter',
       subtitle: 'Validate cron schedules, translate them into plain language, and preview the next run times.',
       examples: 'Examples',
@@ -82,7 +82,7 @@ const resources = {
 
 const queryLang = getQueryLang();
 const savedLang = localStorage.getItem(LangStorageKey);
-const initialLng = (queryLang || (savedLang === 'en' ? 'en' : savedLang === 'zh-CN' ? 'zh-CN' : null) || 'zh-CN'); // ✅ 默认中文
+const initialLng = (queryLang || (savedLang === 'en' ? 'en' : savedLang === 'zh-CN' ? 'zh-CN' : null) || 'zh-CN');
 
 i18n.use(initReactI18next).init({
   resources,

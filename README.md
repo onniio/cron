@@ -1,26 +1,79 @@
 # Cron Guru Clone (Vite + React)
 
-A small, deployable cron expression viewer inspired by crontab.guru:
-- Validate cron expressions
-- Human-readable description
-- Next N run times (with time zone)
-- Examples route
-- Shareable URL via `/?expr=...&tz=...#...` (querystring-based)
+一个参考 crontab.guru 设计的 Cron 表达式查看器，支持：
+- ✅ 验证 Cron 表达式
+- 📝 自然语言描述
+- ⏰ 未来 N 次执行时间（支持时区）
+- 🌍 中英文双语
+- 🎨 浅色/深色主题
+- 🔗 可分享的 URL（带参数：expr/tz/dialect/lang/theme）
 
-## Requirements
-- Node.js 18+ (recommended 20+)
+## 特性
 
-## Install & Run
+- **简洁设计**：参考 crontab.guru 的清爽风格
+- **主题切换**：完美支持浅色和深色主题
+- **国际化**：支持中文和英文
+- **示例页面**：预设常用的 Cron 表达式示例
+- **URL 分享**：所有配置通过 URL 参数保存，方便分享
+
+## 技术栈
+
+- React 18
+- TypeScript
+- Vite
+- react-router-dom
+- i18next (国际化)
+- cron-parser (解析 Cron 表达式)
+- cronstrue (转换为自然语言)
+
+## 本地开发
+
 ```bash
-npm i
-npm run dev -- --host 0.0.0.0 --port 5173
-```
+# 安装依赖
+npm install
 
-## Build & Preview
-```bash
+# 启动开发服务器
+npm run dev
+
+# 构建生产版本
 npm run build
+
+# 预览生产版本
 npm run preview
 ```
 
-## Deployment
-- Cloudflare Pages / Netlify / Vercel (static): build command `npm run build`, output `dist`.
+## 部署到 Vercel
+
+1. 登录 Vercel
+2. 导入项目（GitHub/GitLab/Bitbucket）
+3. 构建命令：`npm run build`
+4. 输出目录：`dist`
+5. 点击部署
+
+或使用 Vercel CLI：
+
+```bash
+npm i -g vercel
+vercel
+```
+
+## 项目结构
+
+```
+src/
+├── components/
+│   └── CronEditor.tsx      # 主编辑器组件
+├── pages/
+│   └── Examples.tsx        # 示例页面
+├── lib/
+│   ├── cron.ts            # Cron 处理工具
+│   └── prefs.ts           # 主题偏好设置
+├── App.tsx                # 主应用组件
+├── i18n.ts                # 国际化配置
+├── main.tsx               # 入口文件
+└── styles.css             # 全局样式
+```
+
+## License
+
+MIT
