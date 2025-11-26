@@ -3,16 +3,18 @@ import { CronExpressionParser } from 'cron-parser';
 
 export type CronDialect = 'crontab5' | 'crontab6';
 
-/**
- * Normalize whitespace and optionally auto-pad to 5 fields.
- * MVP supports classic 5-field crontab.
- */
 export function normalizeExpr(expr: string): string {
   return expr.trim().replace(/\s+/g, ' ');
 }
 
-export function toHuman(expr: string): string {
-  // cronstrue throws on parse errors; catch outside if needed.
+/**
+ * cronstrue locale：常见是 'en' / 'zh_CN'
+ * 不同版本/构建下 locale 支持可能有差异，这里做 best-effort fallback。
+ */
+export function toHuman(expr: string, locale?: string): string {
+  try {
+    if (locale) return (cronstrue as any).toString(expr, { locale });
+  } catch {}
   return cronstrue.toString(expr);
 }
 
@@ -29,22 +31,16 @@ export function getNextRuns(expr: string, tz: string, count: number, dialect: Cr
 
   const interval = CronExpressionParser.parse(clean, { tz, strict: true });
   const safeCount = Math.max(1, Math.min(count, 50));
-  return interval.take(safeCount).map((d) => d.toDate());
+
+  // ✅ cron-parser v5 uses toDate()
+  return interval.take(safeCount).map((d: any) => d.toDate());
 }
 
-/**
- * Helpful warning: classic cron has OR semantics between DOM and DOW
- * when both are restricted (not '*'). This surprises many users.
- */
-export function domDowOrWarning(expr: string): string | null {
+/** 经典 crontab: DOM 与 DOW 同时限制时是 OR 语义（提示用户） */
+export function shouldWarnDomDowOr(expr: string): boolean {
   const fields = normalizeExpr(expr).split(' ').filter(Boolean);
-  if (fields.length < 5) return null;
+  if (fields.length < 5) return false;
   const dom = fields[2];
   const dow = fields[4];
-  const isDomRestricted = dom !== '*';
-  const isDowRestricted = dow !== '*';
-  if (isDomRestricted && isDowRestricted) {
-    return 'Note: In classic crontab, day-of-month and day-of-week are ORed (either match can trigger).';
-  }
-  return null;
+  return dom !== '*' && dow !== '*';
 }

@@ -13,7 +13,6 @@ function setQueryParam(key: string, value: string) {
   u.searchParams.set(key, value);
   window.history.replaceState({}, '', u.toString());
 }
-
 function getQueryParam(key: string): string {
   return new URL(window.location.href).searchParams.get(key) || '';
 }
@@ -21,7 +20,7 @@ function getQueryParam(key: string): string {
 export default function App() {
   const { t } = useTranslation();
 
-  // On initial load: if URL carries lang/theme, honor it (and persist).
+  // URL 优先（用于分享复现），并同步到 localStorage
   React.useEffect(() => {
     const lang = getQueryParam('lang');
     if (lang === 'zh-CN' || lang === 'en') {
@@ -55,17 +54,14 @@ export default function App() {
         path="/"
         element={
           <main className="container">
-            {/* Top bar */}
             <div className="nav">
               <a className="kbd" href="/">{t('appName')}</a>
               <Link to="/examples">{t('examples')}</Link>
 
-              {/* Right-side controls */}
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 10 }}>
                 <button className="btn" onClick={toggleLang}>
                   {t('language')}: {i18n.language === 'zh-CN' ? t('zh') : t('en')}
                 </button>
-
                 <button className="btn" onClick={toggleTheme}>
                   {t('theme')}: {getTheme() === 'dark' ? t('dark') : t('light')}
                 </button>
@@ -78,7 +74,7 @@ export default function App() {
             <CronEditor />
 
             <div className="footer">
-              Tip: URL carries expr/tz/dialect/lang/theme so others can reproduce your view.
+              Tip: 分享链接会携带 expr/tz/dialect/lang/theme，保证他人打开后视图一致。
             </div>
           </main>
         }

@@ -1,29 +1,36 @@
-type CronData =
-  | { clean: string; human: string; warning: string | null; nextRuns: Date[] }
-  | { clean: string; human: string; warning: string | null; error: string };
-
 import React, { useMemo, useState } from 'react';
-import { domDowOrWarning, getNextRuns, normalizeExpr, toHuman, type CronDialect } from '../lib/cron';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
+
+import { getNextRuns, normalizeExpr, shouldWarnDomDowOr, toHuman, type CronDialect } from '../lib/cron';
 
 function defaultTz() {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Singapore';
-}
-
-function setQuery(params: Record<string, string>) {
-  const u = new URL(window.location.href);
-  Object.entries(params).forEach(([k, v]) => u.searchParams.set(k, v));
-  window.history.replaceState({}, '', u.toString());
 }
 
 function getQuery(name: string) {
   return new URL(window.location.href).searchParams.get(name) || '';
 }
 
+function setQueryMerge(params: Record<string, string>) {
+  const u = new URL(window.location.href);
+  Object.entries(params).forEach(([k, v]) => u.searchParams.set(k, v));
+  window.history.replaceState({}, '', u.toString());
+}
+
+type CronData =
+  | { clean: string; human: string; warnDomDowOr: boolean; nextRuns: Date[] }
+  | { clean: string; human: string; warnDomDowOr: boolean; error: string };
+
 export default function CronEditor() {
+  const { t } = useTranslation();
+
   const [expr, setExpr] = useState(getQuery('expr') || '*/5 * * * *');
   const [tz, setTz] = useState(getQuery('tz') || defaultTz());
   const [dialect, setDialect] = useState<CronDialect>((getQuery('dialect') as CronDialect) || 'crontab5');
   const [count, setCount] = useState(10);
+
+  const [copied, setCopied] = useState(false);
 
   const shareUrl = useMemo(() => {
     const u = new URL(window.location.href);
@@ -31,42 +38,58 @@ export default function CronEditor() {
     u.searchParams.set('expr', expr);
     u.searchParams.set('tz', tz);
     u.searchParams.set('dialect', dialect);
+    // lang/theme 已由 App 写入；这里仅保证存在时不丢
+    if (!u.searchParams.get('lang')) u.searchParams.set('lang', i18n.language === 'en' ? 'en' : 'zh-CN');
+    if (!u.searchParams.get('theme')) u.searchParams.set('theme', 'dark');
     return u.toString();
   }, [expr, tz, dialect]);
 
-const data = useMemo<CronData>(() => {
-  const clean = normalizeExpr(expr);
-  if (!clean) return { clean, human: '', warning: null, error: 'Empty expression.' };
+  const data = useMemo<CronData>(() => {
+    const clean = normalizeExpr(expr);
+    if (!clean) {
+      return { clean, human: '', warnDomDowOr: false, error: t('emptyExpression') };
+    }
 
-  let human = '';
-  try { human = toHuman(clean); } catch { human = ''; }
+    const warnDomDowOr = shouldWarnDomDowOr(clean);
 
-  const warning = domDowOrWarning(clean);
+    // cronstrue locale：zh_CN / en（best-effort）
+    const locale = i18n.language === 'zh-CN' ? 'zh_CN' : 'en';
+    let human = '';
+    try {
+      human = toHuman(clean, locale);
+    } catch {
+      human = '';
+    }
 
-  try {
-    const nextRuns = getNextRuns(clean, tz, count, dialect);
-    return { clean, human, warning, nextRuns };
-  } catch (e: any) {
-    return { clean, human, warning, error: e?.message || String(e) };
-  }
-}, [expr, tz, count, dialect]);
-
+    try {
+      const nextRuns = getNextRuns(clean, tz, count, dialect);
+      return { clean, human, warnDomDowOr, nextRuns };
+    } catch (e: any) {
+      return { clean, human, warnDomDowOr, error: e?.message || String(e) };
+    }
+  }, [expr, tz, count, dialect, t]);
 
   const parts = useMemo(() => normalizeExpr(expr).split(' ').filter(Boolean), [expr]);
 
   function syncUrl(nextExpr: string, nextTz: string, nextDialect: CronDialect) {
-    setQuery({ expr: nextExpr, tz: nextTz, dialect: nextDialect });
+    setQueryMerge({ expr: nextExpr, tz: nextTz, dialect: nextDialect });
   }
 
   async function copyShare() {
-    try { await navigator.clipboard.writeText(shareUrl); } catch {}
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 900);
+    } catch {
+      // ignore
+    }
   }
 
   return (
     <div className="card">
       <div className="row">
         <div style={{ flex: '1 1 520px' }}>
-          <div className="label">Cron Expression</div>
+          <div className="label">{t('cronExpression')}</div>
           <input
             className="input mono"
             value={expr}
@@ -78,14 +101,14 @@ const data = useMemo<CronData>(() => {
             placeholder="*/5 * * * *"
           />
           <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <span className="badge mono">fields: {parts.length}</span>
-            <span className="badge">minute hour dom month dow</span>
-            {data.warning ? <span className="badge" title={data.warning}>DOM/DOW OR semantics</span> : null}
+            <span className="badge mono">{t('fields')}: {parts.length}</span>
+            <span className="badge">{t('fieldHint')}</span>
+            {data.warnDomDowOr ? <span className="badge" title={t('domDowWarn')}>DOM/DOW OR</span> : null}
           </div>
         </div>
 
         <div style={{ width: 220 }}>
-          <div className="label">Timezone</div>
+          <div className="label">{t('timezone')}</div>
           <input
             className="input"
             value={tz}
@@ -99,12 +122,19 @@ const data = useMemo<CronData>(() => {
         </div>
 
         <div style={{ width: 120 }}>
-          <div className="label">Next</div>
-          <input className="input" type="number" value={count} onChange={(e) => setCount(Number(e.target.value))} min={1} max={50} />
+          <div className="label">{t('next')}</div>
+          <input
+            className="input"
+            type="number"
+            value={count}
+            onChange={(e) => setCount(Number(e.target.value))}
+            min={1}
+            max={50}
+          />
         </div>
 
         <div style={{ width: 170 }}>
-          <div className="label">Dialect</div>
+          <div className="label">{t('dialect')}</div>
           <select
             className="input"
             value={dialect}
@@ -117,7 +147,7 @@ const data = useMemo<CronData>(() => {
             <option value="crontab5">crontab (5 fields)</option>
             <option value="crontab6">crontab (6 fields)</option>
           </select>
-          <small>*6 fields is validated, but parsing rules may differ by runtime.</small>
+          <small>* 6 fields is validated; runtime semantics may differ.</small>
         </div>
       </div>
 
@@ -125,32 +155,34 @@ const data = useMemo<CronData>(() => {
 
       <div className="row" style={{ alignItems: 'center' }}>
         <div style={{ flex: '1 1 520px' }}>
-          <div className="label">Normalized</div>
+          <div className="label">{t('normalized')}</div>
           <div className="mono">{data.clean}</div>
         </div>
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <span className="kbd">Shareable URL</span>
-          <button className="btn" onClick={copyShare} title="Copy to clipboard">Copy</button>
+          <span className="kbd">{t('shareUrl')}</span>
+          <button className="btn" onClick={copyShare}>
+            {copied ? t('copied') : t('copy')}
+          </button>
         </div>
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <div className="label">Description</div>
+        <div className="label">{t('description')}</div>
         <div>{data.human ? data.human : <span style={{ opacity: 0.6 }}>—</span>}</div>
+        {data.warnDomDowOr ? <div className="footer">{t('domDowWarn')}</div> : null}
       </div>
 
       {'error' in data ? (
         <div className="card error" style={{ marginTop: 12 }}>
-          <div className="label">Validation Error</div>
+          <div className="label">{t('validationError')}</div>
           <div>{data.error}</div>
-          {data.warning ? <div className="footer">{data.warning}</div> : null}
         </div>
       ) : null}
 
       {'nextRuns' in data ? (
         <div style={{ marginTop: 12 }}>
-          <div className="label">Next Runs ({tz})</div>
+          <div className="label">{t('nextRuns')} ({tz})</div>
           <ol>
             {data.nextRuns.map((d, i) => (
               <li key={i}>{d.toLocaleString(undefined, { timeZone: tz })}</li>
@@ -158,10 +190,6 @@ const data = useMemo<CronData>(() => {
           </ol>
         </div>
       ) : null}
-
-      <div className="footer">
-        Tip: If you plan to support Quartz/Spring, add a “dialect” switch and separate validators/parsers per syntax.
-      </div>
     </div>
   );
 }
