@@ -7,6 +7,17 @@
   --accent:#60a5fa;
   --danger:#f87171;
 }
+
+html[data-theme="light"]{
+  --bg:#f6f7fb;
+  --card:#ffffff;
+  --text:#0f172a;
+  --muted:#475569;
+  --border:#e2e8f0;
+  --accent:#2563eb;
+  --danger:#dc2626;
+}
+
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
