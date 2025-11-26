@@ -29,7 +29,7 @@ export function getNextRuns(expr: string, tz: string, count: number, dialect: Cr
 
   const interval = CronExpressionParser.parse(clean, { tz, strict: true });
   const safeCount = Math.max(1, Math.min(count, 50));
-  return interval.take(safeCount).map((d) => d.toJSDate());
+  return interval.take(safeCount).map((d) => d.toDate());
 }
 
 /**

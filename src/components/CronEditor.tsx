@@ -1,3 +1,7 @@
+type CronData =
+  | { clean: string; human: string; warning: string | null; nextRuns: Date[] }
+  | { clean: string; human: string; warning: string | null; error: string };
+
 import React, { useMemo, useState } from 'react';
 import { domDowOrWarning, getNextRuns, normalizeExpr, toHuman, type CronDialect } from '../lib/cron';
 
@@ -30,20 +34,23 @@ export default function CronEditor() {
     return u.toString();
   }, [expr, tz, dialect]);
 
-  const data = useMemo(() => {
-    const clean = normalizeExpr(expr);
-    if (!clean) return { clean, error: 'Empty expression.' } as const;
+const data = useMemo<CronData>(() => {
+  const clean = normalizeExpr(expr);
+  if (!clean) return { clean, human: '', warning: null, error: 'Empty expression.' };
 
-    let human = '';
-    try { human = toHuman(clean); } catch { human = ''; }
+  let human = '';
+  try { human = toHuman(clean); } catch { human = ''; }
 
-    try {
-      const nextRuns = getNextRuns(clean, tz, count, dialect);
-      return { clean, human, nextRuns, warning: domDowOrWarning(clean) } as const;
-    } catch (e: any) {
-      return { clean, human, error: e?.message || String(e), warning: domDowOrWarning(clean) } as const;
-    }
-  }, [expr, tz, count, dialect]);
+  const warning = domDowOrWarning(clean);
+
+  try {
+    const nextRuns = getNextRuns(clean, tz, count, dialect);
+    return { clean, human, warning, nextRuns };
+  } catch (e: any) {
+    return { clean, human, warning, error: e?.message || String(e) };
+  }
+}, [expr, tz, count, dialect]);
+
 
   const parts = useMemo(() => normalizeExpr(expr).split(' ').filter(Boolean), [expr]);
 
