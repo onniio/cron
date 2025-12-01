@@ -8,6 +8,12 @@ import Examples from './pages/Examples';
 import i18n, { LangStorageKey } from './i18n';
 import { getTheme, setTheme, type Theme } from './lib/prefs';
 
+import CronEditorEnhanced from './components/CronEditorEnhanced';
+
+function App() {
+  return <CronEditorEnhanced />;
+}
+
 function setQueryParam(key: string, value: string) {
   const u = new URL(window.location.href);
   u.searchParams.set(key, value);
